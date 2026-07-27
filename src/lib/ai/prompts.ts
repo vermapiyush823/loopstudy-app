@@ -105,8 +105,11 @@ const FLASHCARDS_SCHEMA = {
           properties: {
             question: { type: "string" },
             answer: { type: "string" },
+            cardType: { type: "string", enum: ["flip", "mcq", "fill_blank"] },
+            options: { type: "array", items: { type: "string" } },
+            blankToken: { type: "string" },
           },
-          required: ["question", "answer"],
+          required: ["question", "answer", "cardType"],
         },
       },
     },
@@ -117,6 +120,9 @@ const FLASHCARDS_SCHEMA = {
 export interface GeneratedFlashcard {
   question: string;
   answer: string;
+  cardType?: "flip" | "mcq" | "fill_blank";
+  options?: string[];
+  blankToken?: string;
 }
 
 export async function generateFlashcardsFromLesson(
@@ -127,14 +133,33 @@ export async function generateFlashcardsFromLesson(
     [
       {
         role: "system",
-        content: `You turn a lesson into flashcards. Generate up to ${count} question/answer pairs covering the concepts that matter. Questions must be specific and testable; answers concise. Return JSON only.`,
+        content: [
+          `You turn a lesson into flashcards. Generate up to ${count} cards covering the concepts that matter. Questions must be specific and testable; answers concise.`,
+          "",
+          "Produce a mix of card types via the `cardType` field:",
+          '- "flip" (roughly half): plain question/answer.',
+          '- "mcq" (~30%): set `options` to exactly 3 plausible-but-wrong distractors (do not include the correct answer in `options` — it is taken from `answer`).',
+          '- "fill_blank" (~20%): `question` is a sentence containing the key term to test, and `blankToken` is the exact substring of `question` to blank out (it must match a substring of `question` verbatim); `answer` is the same as `blankToken`.',
+          "",
+          "Return JSON only.",
+        ].join("\n"),
       },
       { role: "user", content: lessonText },
     ],
     FLASHCARDS_SCHEMA,
     { temperature: 0.5, maxTokens: 4096 }
   );
-  return (result.cards ?? []).filter((c) => c.question?.trim() && c.answer?.trim());
+  return (result.cards ?? [])
+    .filter((c) => c.question?.trim() && c.answer?.trim())
+    .map((c) => {
+      if (c.cardType === "mcq" && (!c.options || c.options.length < 2)) {
+        return { ...c, cardType: "flip" as const, options: undefined };
+      }
+      if (c.cardType === "fill_blank" && (!c.blankToken || !c.question.includes(c.blankToken))) {
+        return { ...c, cardType: "flip" as const, blankToken: undefined };
+      }
+      return c;
+    });
 }
 
 /* ---------------------------------------------------------------- *
@@ -158,6 +183,42 @@ export async function explainLesson(
       { role: "user", content: lessonText },
     ],
     { maxTokens: 3072 }
+  );
+}
+
+/* ---------------------------------------------------------------- *
+ * Grounded lesson Q&A — answer a follow-up question using only the
+ * lesson content as ground truth, optionally continuing a short thread.
+ * ---------------------------------------------------------------- */
+
+const QA_SYSTEM_PROMPT = [
+  "You are a tutor answering a learner's follow-up question about the lesson below.",
+  "Answer using ONLY the lesson content as ground truth. If the question asks about something the lesson doesn't cover, say so explicitly rather than inventing detail.",
+  "Be concise and direct — under 200 words. Use code blocks where code makes the answer clearer.",
+].join("\n");
+
+const MAX_PRIOR_QA = 4;
+
+export async function answerLessonQuestion(
+  lessonText: string,
+  question: string,
+  priorQA: { question: string; answer: string }[] = []
+): Promise<string> {
+  const history = priorQA.slice(-MAX_PRIOR_QA).flatMap(
+    (qa) =>
+      [
+        { role: "user" as const, content: qa.question },
+        { role: "assistant" as const, content: qa.answer },
+      ]
+  );
+
+  return chatCompletion(
+    [
+      { role: "system", content: `${QA_SYSTEM_PROMPT}\n\nLesson:\n${lessonText}` },
+      ...history,
+      { role: "user", content: question },
+    ],
+    { maxTokens: 1024 }
   );
 }
 

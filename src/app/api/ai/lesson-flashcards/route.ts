@@ -10,6 +10,7 @@ import {
 } from "@/lib/db/collections";
 import { generateFlashcardsFromLesson } from "@/lib/ai/prompts";
 import { LlmError } from "@/lib/ai/llm";
+import { computeMasteryScore } from "@/lib/learning/mastery";
 
 export const maxDuration = 60;
 
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     const cards = await generateFlashcardsFromLesson(lesson.content);
     if (cards.length > 0) {
       const now = new Date();
+      const initialCardState = { easeFactor: 2.5, interval: 0, repetitions: 0, nextReviewDate: now };
       await flashcards.insertMany(
         cards.map((card) => ({
           userId: uid,
@@ -56,15 +58,26 @@ export async function POST(req: Request) {
           question: card.question,
           answer: card.answer,
           source: "ai" as const,
-          easeFactor: 2.5,
-          interval: 0,
-          repetitions: 0,
-          nextReviewDate: now,
+          cardType: card.cardType ?? "flip",
+          options: card.options,
+          blankToken: card.blankToken,
+          ...initialCardState,
           lastReviewedAt: null,
           createdAt: now,
           updatedAt: now,
         }))
       );
+
+      const masteryScore = computeMasteryScore(
+        cards.map(() => initialCardState),
+        now
+      );
+      if (masteryScore !== undefined) {
+        await concepts.updateOne(
+          { _id: concept._id },
+          { $set: { masteryScore, masteryUpdatedAt: now } }
+        );
+      }
     }
 
     const topics = await getTopicsCollection();

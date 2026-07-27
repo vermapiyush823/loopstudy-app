@@ -3,8 +3,10 @@
 import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { getFlashcardsCollection } from "@/lib/db/collections";
+import { getConceptsCollection, getFlashcardsCollection } from "@/lib/db/collections";
 import { computeNextReview } from "@/lib/learning/sm2";
+import { computeMasteryScore } from "@/lib/learning/mastery";
+import { getFlashcardsForConcept } from "@/lib/learning/queries";
 
 async function requireUserId() {
   const session = await auth();
@@ -40,6 +42,25 @@ export async function rateFlashcard(cardId: string, rating: 1 | 2 | 3 | 4) {
       },
     }
   );
+
+  if (card.conceptId) {
+    const siblingCards = await getFlashcardsForConcept(userId, card.conceptId);
+    const masteryScore = computeMasteryScore(
+      siblingCards.map((c) =>
+        c._id!.equals(card._id!)
+          ? { easeFactor: next.easeFactor, repetitions: next.repetitions, nextReviewDate: next.nextReviewDate }
+          : { easeFactor: c.easeFactor, repetitions: c.repetitions, nextReviewDate: c.nextReviewDate }
+      ),
+      now
+    );
+    if (masteryScore !== undefined) {
+      const concepts = await getConceptsCollection();
+      await concepts.updateOne(
+        { _id: card.conceptId },
+        { $set: { masteryScore, masteryUpdatedAt: now } }
+      );
+    }
+  }
 
   revalidatePath("/");
 }

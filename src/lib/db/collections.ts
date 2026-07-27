@@ -24,6 +24,9 @@ export interface Concept {
   title: string;
   summary: string;
   status: "not_started" | "in_progress" | "completed";
+  /** Derived 0-100 signal from sibling flashcards' SM-2 state; unset until the concept has cards. */
+  masteryScore?: number;
+  masteryUpdatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -69,6 +72,12 @@ export interface Flashcard {
   question: string;
   answer: string;
   source: "ai" | "manual";
+  /** Absent/undefined is treated as "flip" for backward compatibility with existing cards. */
+  cardType?: "flip" | "mcq" | "fill_blank";
+  /** MCQ distractors + correct answer (correct answer is the `answer` field above). */
+  options?: string[];
+  /** The exact substring within `question` to blank out for fill-in-the-blank cards. */
+  blankToken?: string;
   easeFactor: number;
   interval: number;
   repetitions: number;
@@ -76,6 +85,18 @@ export interface Flashcard {
   lastReviewedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** A persisted, lesson-grounded follow-up question the learner asked. */
+export interface LessonQuestion {
+  _id?: ObjectId;
+  userId: ObjectId;
+  topicId: ObjectId;
+  conceptId: ObjectId;
+  lessonId: ObjectId;
+  question: string;
+  answer: string;
+  createdAt: Date;
 }
 
 /** Auth.js's MongoDB adapter owns this collection (default name "users") — read-only here. */
@@ -125,6 +146,11 @@ export async function getLessonsCollection(): Promise<Collection<Lesson>> {
 export async function getLessonNotesCollection(): Promise<Collection<LessonNote>> {
   const db = await getDb();
   return db.collection<LessonNote>("lessonNotes");
+}
+
+export async function getLessonQuestionsCollection(): Promise<Collection<LessonQuestion>> {
+  const db = await getDb();
+  return db.collection<LessonQuestion>("lessonQuestions");
 }
 
 export async function getFlashcardsCollection(): Promise<Collection<Flashcard>> {

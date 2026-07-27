@@ -5,7 +5,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import {
   getConceptsCollection,
+  getFlashcardsCollection,
   getLessonNotesCollection,
+  getLessonQuestionsCollection,
   getLessonsCollection,
   getTopicsCollection,
 } from "@/lib/db/collections";
@@ -81,6 +83,48 @@ export async function markConceptComplete(conceptId: string) {
   revalidatePath(`/learn/${conceptId}`);
   if (topic) revalidatePath(`/topics/${topic.slug}`);
   revalidatePath("/");
+}
+
+/**
+ * Deletes the existing lesson for a concept (plus its flashcards, note, and
+ * Q&A — all keyed to the lesson content that's about to be replaced), then
+ * resets the concept back to not_started so LessonGenerator regenerates it
+ * from scratch on the client's next request.
+ */
+export async function regenerateLesson(conceptId: string) {
+  const userId = await requireUserId();
+  const uid = new ObjectId(userId);
+
+  const concepts = await getConceptsCollection();
+  const concept = await concepts.findOne({ _id: new ObjectId(conceptId), userId: uid });
+  if (!concept) throw new Error("Forbidden: concept does not belong to user");
+
+  const lessons = await getLessonsCollection();
+  const lesson = await lessons.findOne({ userId: uid, conceptId: concept._id! });
+  if (!lesson) return;
+
+  const [flashcards, notes, questions] = await Promise.all([
+    getFlashcardsCollection(),
+    getLessonNotesCollection(),
+    getLessonQuestionsCollection(),
+  ]);
+
+  await Promise.all([
+    flashcards.deleteMany({ userId: uid, lessonId: lesson._id! }),
+    notes.deleteOne({ userId: uid, lessonId: lesson._id! }),
+    questions.deleteMany({ userId: uid, lessonId: lesson._id! }),
+    lessons.deleteOne({ _id: lesson._id! }),
+  ]);
+
+  await concepts.updateOne(
+    { _id: concept._id },
+    {
+      $set: { status: "not_started", updatedAt: new Date() },
+      $unset: { masteryScore: "", masteryUpdatedAt: "" },
+    }
+  );
+
+  revalidatePath(`/learn/${conceptId}`);
 }
 
 export async function saveTakeaway(lessonId: string, formData: FormData) {

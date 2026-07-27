@@ -128,4 +128,36 @@
       0 1px 2px rgb(var(--shadow-color) / 0.3),
       0 12px 24px -14px rgb(var(--shadow-color) / 0.6);
   }
+
+  /* 3D flip flashcard: a perspective container around an .inner that
+     rotates 180deg on .flipped, with two backface-hidden faces stacked
+     via absolute positioning so only one is ever visible at a time. */
+  .flip-card-outer {
+    perspective: 1200px;
+  }
+  .flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+  .flip-card-outer.flipped .flip-card-inner {
+    transform: rotateY(180deg);
+  }
+  .flip-card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .flip-card-face-back {
+    transform: rotateY(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-card-inner {
+    transition: none !important;
+  }
 }

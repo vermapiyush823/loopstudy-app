@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/markdown-content";
 
-type Phase = "idle" | "connecting" | "streaming" | "flashcards" | "error";
+type Phase = "idle" | "connecting" | "streaming" | "done" | "error";
 
 async function* readNdjson(body: ReadableStream<Uint8Array>) {
   const reader = body.getReader();
@@ -67,17 +67,7 @@ export function LessonGenerator({ conceptId }: { conceptId: string }) {
         return;
       }
 
-      setPhase("flashcards");
-      const cardsRes = await fetch("/api/ai/lesson-flashcards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conceptId }),
-      });
-      if (!cardsRes.ok) {
-        const data = await cardsRes.json().catch(() => ({}));
-        throw new Error(data?.error ?? "Flashcard generation failed");
-      }
-
+      setPhase("done");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -91,7 +81,7 @@ export function LessonGenerator({ conceptId }: { conceptId: string }) {
         <h2 className="font-serif text-lg font-semibold">Ready when you are</h2>
         <p className="text-[13.5px] leading-relaxed text-foreground-soft">
           The AI will write this lesson for you — the explanation, real-world
-          examples, and a set of flashcards to practice with.
+          examples, and key takeaways. You can generate flashcards afterward.
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button onClick={start} className="w-full">
@@ -107,9 +97,6 @@ export function LessonGenerator({ conceptId }: { conceptId: string }) {
         <p className="text-sm text-muted-foreground">Connecting to the AI…</p>
       )}
       {text && <MarkdownContent content={text} className="text-[15px] leading-[1.65]" />}
-      {phase === "flashcards" && (
-        <p className="text-sm text-muted-foreground">Generating flashcards…</p>
-      )}
     </div>
   );
 }

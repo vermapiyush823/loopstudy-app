@@ -46,6 +46,9 @@ export default async function TopicReviewPage({
           id: c._id!.toString(),
           question: c.question,
           answer: c.answer,
+          cardType: c.cardType,
+          options: c.options,
+          blankToken: c.blankToken,
         }))}
         backHref={`/topics/${topic.slug}`}
         backLabel={`Back to ${topic.name}`}

@@ -3,12 +3,14 @@ import {
   getConceptsCollection,
   getFlashcardsCollection,
   getLessonNotesCollection,
+  getLessonQuestionsCollection,
   getLessonsCollection,
   getTopicsCollection,
   type Concept,
   type Flashcard,
   type Lesson,
   type LessonNote,
+  type LessonQuestion,
 } from "@/lib/db/collections";
 
 export async function getConceptsForTopic(
@@ -55,6 +57,25 @@ export async function getFlashcardsForLesson(
 ): Promise<Flashcard[]> {
   const flashcards = await getFlashcardsCollection();
   return flashcards
+    .find({ userId: new ObjectId(userId), lessonId })
+    .sort({ createdAt: 1 })
+    .toArray();
+}
+
+export async function getFlashcardsForConcept(
+  userId: string,
+  conceptId: ObjectId
+): Promise<Flashcard[]> {
+  const flashcards = await getFlashcardsCollection();
+  return flashcards.find({ userId: new ObjectId(userId), conceptId }).toArray();
+}
+
+export async function getLessonQuestions(
+  userId: string,
+  lessonId: ObjectId
+): Promise<LessonQuestion[]> {
+  const questions = await getLessonQuestionsCollection();
+  return questions
     .find({ userId: new ObjectId(userId), lessonId })
     .sort({ createdAt: 1 })
     .toArray();

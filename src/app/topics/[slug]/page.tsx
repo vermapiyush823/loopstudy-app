@@ -29,6 +29,20 @@ function StatusDot({ status }: { status: Concept["status"] }) {
   return <span className="mt-0.5 size-[22px] shrink-0 rounded-full border-2 border-border" />;
 }
 
+function MasteryBar({ score }: { score: number }) {
+  return (
+    <div
+      className="mt-1.5 h-1 w-16 overflow-hidden rounded-full bg-border"
+      title={`${score}% mastery`}
+    >
+      <div
+        className="h-full rounded-full bg-primary"
+        style={{ width: `${score}%` }}
+      />
+    </div>
+  );
+}
+
 function ConceptRow({ concept }: { concept: Concept }) {
   return (
     <Link
@@ -41,6 +55,7 @@ function ConceptRow({ concept }: { concept: Concept }) {
         <div className="mt-0.5 text-[13px] leading-snug text-foreground-soft">
           {concept.summary}
         </div>
+        {concept.masteryScore !== undefined && <MasteryBar score={concept.masteryScore} />}
       </div>
     </Link>
   );

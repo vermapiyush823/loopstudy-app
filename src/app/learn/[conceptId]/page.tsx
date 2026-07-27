@@ -6,6 +6,7 @@ import {
   getFlashcardsForLesson,
   getLessonForConcept,
   getLessonNote,
+  getLessonQuestions,
 } from "@/lib/learning/queries";
 import { getTopicsCollection } from "@/lib/db/collections";
 import { markConceptComplete, saveTakeaway } from "@/lib/learning/actions";
@@ -16,6 +17,8 @@ import { SubmitButton } from "@/components/submit-button";
 import { LessonFlashcards } from "@/components/lesson-flashcards";
 import { LessonDeepDive } from "@/components/lesson-deep-dive";
 import { LessonGenerator } from "@/components/lesson-generator";
+import { GenerateFlashcardsButton } from "@/components/generate-flashcards-button";
+import { RegenerateLessonButton } from "@/components/regenerate-lesson-button";
 import { BottomCtaBar } from "@/components/bottom-cta-bar";
 import { DrillInHeader } from "@/components/drill-in-header";
 
@@ -34,12 +37,13 @@ export default async function LessonPage({
   const topic = await topics.findOne({ _id: concept.topicId });
 
   const lesson = await getLessonForConcept(session.user.id, concept._id!);
-  const [note, flashcards] = lesson
+  const [note, flashcards, questions] = lesson
     ? await Promise.all([
         getLessonNote(session.user.id, lesson._id!),
         getFlashcardsForLesson(session.user.id, lesson._id!),
+        getLessonQuestions(session.user.id, lesson._id!),
       ])
-    : [null, []];
+    : [null, [], []];
 
   return (
     <>
@@ -54,27 +58,43 @@ export default async function LessonPage({
           <LessonGenerator conceptId={conceptId} />
         ) : (
           <div className="flex flex-col gap-6">
-            <MarkdownContent
-              content={lesson.content}
-              className="text-[15px] leading-[1.65]"
+            <div>
+              <MarkdownContent
+                content={lesson.content}
+                className="text-[15px] leading-[1.65]"
+              />
+              <div className="mt-3 flex justify-end">
+                <RegenerateLessonButton conceptId={conceptId} />
+              </div>
+            </div>
+
+            <LessonDeepDive
+              lessonId={lesson._id!.toString()}
+              initialQuestions={questions.map((q) => ({
+                question: q.question,
+                answer: q.answer,
+              }))}
             />
 
-            <LessonDeepDive lessonId={lesson._id!.toString()} />
-
-            {flashcards.length > 0 && (
-              <section>
-                <h3 className="mb-2.5 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">
-                  Practice · {flashcards.length} cards
-                </h3>
+            <section>
+              <h3 className="mb-2.5 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">
+                Practice{flashcards.length > 0 ? ` · ${flashcards.length} cards` : ""}
+              </h3>
+              {flashcards.length > 0 ? (
                 <LessonFlashcards
                   cards={flashcards.map((c) => ({
                     id: c._id!.toString(),
                     question: c.question,
                     answer: c.answer,
+                    cardType: c.cardType,
+                    options: c.options,
+                    blankToken: c.blankToken,
                   }))}
                 />
-              </section>
-            )}
+              ) : (
+                <GenerateFlashcardsButton conceptId={conceptId} />
+              )}
+            </section>
 
             <section>
               <h3 className="mb-2.5 text-[13px] font-bold tracking-wide text-muted-foreground uppercase">
