@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/markdown-content";
 
@@ -87,28 +87,26 @@ export function LessonGenerator({ conceptId }: { conceptId: string }) {
 
   if (phase === "idle" || phase === "error") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Ready when you are</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 pb-6">
-          <p className="text-sm text-muted-foreground">
-            The AI will write this lesson for you — the explanation, real-world
-            examples, and a set of flashcards to practice with.
-          </p>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button onClick={start}>{error ? "Try again" : "Teach me this"}</Button>
-        </CardContent>
+      <Card className="gap-3 p-5">
+        <h2 className="font-serif text-lg font-semibold">Ready when you are</h2>
+        <p className="text-[13.5px] leading-relaxed text-foreground-soft">
+          The AI will write this lesson for you — the explanation, real-world
+          examples, and a set of flashcards to practice with.
+        </p>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button onClick={start} className="w-full">
+          {error ? "Try again" : "Teach me this"}
+        </Button>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       {phase === "connecting" && (
         <p className="text-sm text-muted-foreground">Connecting to the AI…</p>
       )}
-      {text && <MarkdownContent content={text} />}
+      {text && <MarkdownContent content={text} className="text-[15px] leading-[1.65]" />}
       {phase === "flashcards" && (
         <p className="text-sm text-muted-foreground">Generating flashcards…</p>
       )}

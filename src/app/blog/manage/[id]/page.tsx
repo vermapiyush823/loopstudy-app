@@ -5,6 +5,8 @@ import { getBlogPostById } from "@/lib/blog/queries";
 import { deleteBlogPost } from "@/lib/blog/actions";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/markdown-content";
+import { DrillInHeader } from "@/components/drill-in-header";
+import { BottomCtaBar } from "@/components/bottom-cta-bar";
 
 export default async function ManageBlogPostPage({
   params,
@@ -17,30 +19,27 @@ export default async function ManageBlogPostPage({
   if (!post) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{post.title}</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            <Link href={`/blog/${post.slug}`} className="underline underline-offset-4">
-              View public post
-            </Link>
-            {post.tags.length > 0 && ` · ${post.tags.join(", ")}`}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link href={`/blog/manage/${id}/edit`}>Edit</Link>
-          </Button>
-          <form action={deleteBlogPost.bind(null, id)}>
-            <Button type="submit" variant="destructive">
-              Delete
-            </Button>
-          </form>
-        </div>
+    <>
+      <DrillInHeader title={post.title} backHref="/blog/manage" />
+      <div className="flex-1 overflow-y-auto px-4.5 pt-3.5 pb-7">
+        <p className="mb-4.5 text-[12px] text-muted-foreground">
+          <Link href={`/blog/${post.slug}`} className="font-semibold text-primary">
+            View public post
+          </Link>
+          {post.tags.length > 0 && ` · ${post.tags.join(", ")}`}
+        </p>
+        <MarkdownContent content={post.content} className="text-[15px] leading-[1.65]" />
       </div>
-
-      <MarkdownContent content={post.content} />
-    </div>
+      <BottomCtaBar>
+        <Button asChild variant="outline" size="sm" className="flex-1">
+          <Link href={`/blog/manage/${id}/edit`}>Edit</Link>
+        </Button>
+        <form action={deleteBlogPost.bind(null, id)} className="flex-1">
+          <Button type="submit" variant="destructive" size="sm" className="w-full">
+            Delete
+          </Button>
+        </form>
+      </BottomCtaBar>
+    </>
   );
 }

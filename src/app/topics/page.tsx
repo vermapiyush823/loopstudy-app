@@ -3,7 +3,7 @@ import { requireSession } from "@/lib/auth/require-session";
 import { getUserTopics, groupTopicsByParent } from "@/lib/topics/queries";
 import { getProgressByTopic } from "@/lib/learning/queries";
 import { createTopic } from "@/lib/topics/actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,66 +17,69 @@ export default async function TopicsPage() {
   const grouped = groupTopicsByParent(topics);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="mb-2 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">What do you want to learn?</h1>
-      </div>
-      <p className="mb-8 text-sm text-muted-foreground">
+    <div className="flex-1 overflow-y-auto px-4.5 pt-4.5 pb-7">
+      <p className="mb-4.5 text-[13.5px] text-foreground-soft">
         Pick a topic and the AI will build a learning path through it.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="flex flex-col gap-2.5">
         {grouped.map(({ topic, subtopics }) => {
           const p = progress.get(topic._id!.toString());
           return (
             <Link key={topic._id!.toString()} href={`/topics/${topic.slug}`}>
-              <Card className="h-full transition-colors hover:border-foreground/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{topic.name}</span>
-                    {p && (
-                      <span className="text-xs font-normal text-muted-foreground">
-                        {p.completed}/{p.total}
-                      </span>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 text-sm text-muted-foreground">
-                  {topic.description && <p>{topic.description}</p>}
-                  {subtopics.length > 0 && (
-                    <p className="text-xs">
-                      Subtopics: {subtopics.map((s) => s.name).join(", ")}
-                    </p>
+              <Card className="gap-1.5 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-serif text-[15.5px] font-semibold">{topic.name}</h4>
+                  {p && (
+                    <span className="shrink-0 rounded-full bg-background px-2.5 py-0.5 text-[11.5px] tabular-nums text-foreground-soft">
+                      {p.completed}/{p.total}
+                    </span>
                   )}
-                  {!p && (
-                    <p className="text-xs text-muted-foreground/70">
+                </div>
+                {topic.description && (
+                  <p className="text-[13px] leading-relaxed text-foreground-soft">
+                    {topic.description}
+                  </p>
+                )}
+                {subtopics.length > 0 ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    Subtopics: {subtopics.map((s) => s.name).join(", ")}
+                  </p>
+                ) : (
+                  !p && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       No path yet — open to generate one
                     </p>
-                  )}
-                </CardContent>
+                  )
+                )}
               </Card>
             </Link>
           );
         })}
       </div>
 
-      <Card className="mt-8 max-w-md">
-        <CardHeader>
-          <CardTitle className="text-base">Add a custom topic</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createTopic} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" placeholder="e.g. GraphQL" required />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input id="description" name="description" placeholder="Short description" />
-            </div>
-            <Button type="submit">Create topic</Button>
-          </form>
-        </CardContent>
+      <Card className="mt-3.5 gap-3 p-4">
+        <div className="text-sm font-semibold">Add a custom topic</div>
+        <form action={createTopic} className="space-y-2.5">
+          <div className="space-y-1">
+            <Label htmlFor="name" className="text-xs font-semibold text-foreground-soft">
+              Name
+            </Label>
+            <Input id="name" name="name" placeholder="e.g. Rust" required />
+          </div>
+          <div className="space-y-1">
+            <Label
+              htmlFor="description"
+              className="text-xs font-semibold text-foreground-soft"
+            >
+              Description
+            </Label>
+            <Input id="description" name="description" placeholder="Optional" />
+          </div>
+          <Button type="submit" size="sm" className="w-full">
+            Create topic
+          </Button>
+        </form>
       </Card>
     </div>
   );

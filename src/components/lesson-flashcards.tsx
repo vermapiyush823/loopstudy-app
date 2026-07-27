@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 
 interface PracticeCard {
   id: string;
@@ -22,7 +22,7 @@ export function LessonFlashcards({ cards }: { cards: PracticeCard[] }) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2.5">
       {cards.map((card) => {
         const isRevealed = revealed.has(card.id);
         return (
@@ -37,18 +37,18 @@ export function LessonFlashcards({ cards }: { cards: PracticeCard[] }) {
                 toggle(card.id);
               }
             }}
-            className="cursor-pointer transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className={`cursor-pointer p-3.5 text-[13.5px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
+              isRevealed ? "border-transparent bg-accent" : ""
+            }`}
           >
-            <CardContent className="py-4 text-sm">
-              <p className="font-medium">{card.question}</p>
-              {isRevealed ? (
-                <p className="mt-2 text-muted-foreground">{card.answer}</p>
-              ) : (
-                <p className="mt-2 text-xs text-muted-foreground/60">
-                  Click to reveal
-                </p>
-              )}
-            </CardContent>
+            <p className="font-semibold">{card.question}</p>
+            {isRevealed ? (
+              <p className="mt-1.5 text-foreground-soft">{card.answer}</p>
+            ) : (
+              <p className="mt-1.5 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                Tap to reveal
+              </p>
+            )}
           </Card>
         );
       })}

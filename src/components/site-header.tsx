@@ -1,49 +1,53 @@
-import Link from "next/link";
-import { auth } from "@/auth";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { SignInButton, SignOutButton } from "@/components/auth-buttons";
+"use client";
 
-export async function SiteHeader() {
-  const session = await auth();
+import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+const TOP_LEVEL_TITLES: Record<string, string> = {
+  "/topics": "Learn",
+  "/review": "Review",
+  "/blog": "Blog",
+};
+
+function initials(name?: string | null) {
+  if (!name) return "?";
+  return name.trim().charAt(0).toUpperCase();
+}
+
+export function SiteHeader({
+  userName,
+  signedIn,
+  authControl,
+}: {
+  userName?: string | null;
+  signedIn: boolean;
+  authControl: ReactNode;
+}) {
+  const pathname = usePathname();
 
   return (
-    <header className="border-b">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="font-semibold tracking-tight">
-          Loopstudy
-        </Link>
+    <header
+      className="flex shrink-0 items-center gap-2.5 border-b border-border bg-background-soft px-4"
+      style={{ paddingTop: "max(0.875rem, env(safe-area-inset-top))", paddingBottom: "0.75rem" }}
+    >
+      {pathname === "/" ? (
+        <span className="font-serif text-lg font-bold">Loopstudy</span>
+      ) : (
+        <span className="text-base font-bold">{TOP_LEVEL_TITLES[pathname] ?? "Loopstudy"}</span>
+      )}
 
-        <nav className="flex items-center gap-4 text-sm">
-          {session?.user && (
-            <span className="flex items-center gap-4 border-r pr-4">
-              <Link href="/" className="text-muted-foreground hover:text-foreground">
-                Today
-              </Link>
-              <Link href="/topics" className="text-muted-foreground hover:text-foreground">
-                Learn
-              </Link>
-            </span>
-          )}
+      <span className="flex-1" />
 
-          <span className="flex items-center gap-4">
-            <Link href="/blog" className="text-muted-foreground hover:text-foreground">
-              Blog
-            </Link>
-            {session?.user && (
-              <Link
-                href="/blog/manage"
-                className="text-muted-foreground hover:text-foreground"
-              >
-                Write
-              </Link>
-            )}
-          </span>
+      <ThemeToggle />
 
-          <ThemeToggle />
+      {signedIn && (
+        <div className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-accent text-[12.5px] font-bold text-accent-foreground">
+          {initials(userName)}
+        </div>
+      )}
 
-          {session?.user ? <SignOutButton /> : <SignInButton />}
-        </nav>
-      </div>
+      {authControl}
     </header>
   );
 }

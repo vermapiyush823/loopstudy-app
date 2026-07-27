@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublishedPostBySlug } from "@/lib/blog/queries";
 import { MarkdownContent } from "@/components/markdown-content";
+import { DrillInHeader } from "@/components/drill-in-header";
 
 export default async function BlogPostPage({
   params,
@@ -12,12 +13,14 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   return (
-    <article className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-2 text-3xl font-semibold tracking-tight">{post.title}</h1>
-      {post.tags.length > 0 && (
-        <p className="mb-8 text-sm text-muted-foreground">{post.tags.join(", ")}</p>
-      )}
-      <MarkdownContent content={post.content} />
-    </article>
+    <>
+      <DrillInHeader title={post.title} backHref="/blog" />
+      <article className="flex-1 overflow-y-auto px-4.5 py-4.5">
+        {post.tags.length > 0 && (
+          <p className="mb-4.5 text-[13px] text-muted-foreground">{post.tags.join(", ")}</p>
+        )}
+        <MarkdownContent content={post.content} className="text-[15px] leading-[1.65]" />
+      </article>
+    </>
   );
 }

@@ -1,7 +1,8 @@
 import { requireSession } from "@/lib/auth/require-session";
 import { getDueFlashcards } from "@/lib/review/queries";
 import { ReviewSession } from "@/components/review-session";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { DrillInHeader } from "@/components/drill-in-header";
+import { Card } from "@/components/ui/card";
 
 export default async function ReviewPage() {
   const session = await requireSession();
@@ -9,23 +10,20 @@ export default async function ReviewPage() {
 
   if (due.length === 0) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16">
-        <Card>
-          <CardHeader>
-            <CardTitle>All caught up</CardTitle>
-            <CardDescription>No cards are due for review right now.</CardDescription>
-          </CardHeader>
-          <CardContent />
+      <div className="flex flex-1 items-center justify-center px-4.5">
+        <Card className="w-full gap-1.5 p-5 text-center">
+          <h2 className="font-serif text-lg font-semibold">All caught up</h2>
+          <p className="text-[13.5px] text-foreground-soft">
+            No cards are due for review right now.
+          </p>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-10">
-      <h1 className="mx-auto mb-8 max-w-lg text-2xl font-semibold tracking-tight">
-        Review
-      </h1>
+    <>
+      <DrillInHeader title="Review" backHref="/" />
       <ReviewSession
         cards={due.map((c) => ({
           id: c._id!.toString(),
@@ -36,6 +34,6 @@ export default async function ReviewPage() {
         backHref="/"
         backLabel="Back to dashboard"
       />
-    </div>
+    </>
   );
 }

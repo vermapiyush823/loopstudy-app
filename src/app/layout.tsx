@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteHeader } from "@/components/site-header";
+import { AppShell } from "@/components/app-shell";
+import { auth } from "@/auth";
+import { getDueSummary } from "@/lib/review/queries";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,26 +21,34 @@ export const metadata: Metadata = {
   description: "Study, write, and get quizzed — in one loop.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+  const due = session?.user?.id ? await getDueSummary(session.user.id) : null;
+
   return (
     <html
       lang="en"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex h-full flex-col overflow-hidden">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <AppShell
+            userName={session?.user?.name}
+            signedIn={!!session?.user}
+            dueCount={due?.totalCount ?? 0}
+          >
+            {children}
+          </AppShell>
         </ThemeProvider>
       </body>
     </html>

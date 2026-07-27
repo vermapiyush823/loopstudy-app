@@ -31,31 +31,35 @@ export function LessonDeepDive({ lessonId }: { lessonId: string }) {
   }
 
   return (
-    <section className="rounded-lg border p-4">
-      <p className="mb-3 text-sm font-medium">Didn&apos;t land? Try another angle.</p>
-      <div className="flex flex-wrap gap-2">
+    <section className="rounded-2xl border border-dashed border-border p-4">
+      <p className="mb-2.5 text-[12.5px] text-muted-foreground">
+        Didn&apos;t land? Try another angle.
+      </p>
+      <div className="flex gap-2">
         <Button
           size="sm"
           variant="outline"
+          className="flex-1"
           onClick={() => run("eli5")}
           disabled={loading !== null}
         >
-          {loading === "eli5" ? "Rewriting…" : "Explain it simpler"}
+          {loading === "eli5" ? "Rewriting…" : "Simpler"}
         </Button>
         <Button
           size="sm"
           variant="outline"
+          className="flex-1"
           onClick={() => run("expert")}
           disabled={loading !== null}
         >
-          {loading === "expert" ? "Rewriting…" : "Go deeper"}
+          {loading === "expert" ? "Rewriting…" : "Deeper"}
         </Button>
       </div>
 
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
       {result && (
-        <div className="mt-4 border-t pt-4">
+        <div className="mt-4 border-t border-border pt-4">
           <MarkdownContent content={result.text} />
         </div>
       )}

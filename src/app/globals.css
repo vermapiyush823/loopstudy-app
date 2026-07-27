@@ -4,58 +4,78 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.875rem;
+  --tabbar-h: 60px;
+
+  --background: #f5efe2;
+  --background-soft: #fbf7ed;
+  --foreground: #2a2118;
+  --foreground-soft: #655a4d;
+  --card: #ffffff;
+  --card-foreground: #2a2118;
+  --popover: #ffffff;
+  --popover-foreground: #2a2118;
+  --primary: #be5b24;
+  --primary-foreground: #fff7ee;
+  --secondary: #f1dcc5;
+  --secondary-foreground: #2a2118;
+  --muted: #f5efe2;
+  --muted-foreground: #8c8072;
+  --accent: #f1dcc5;
+  --accent-foreground: #be5b24;
+  --destructive: #b34437;
+  --destructive-foreground: #f0dad6;
+  --success: #4b7a52;
+  --success-foreground: #dce9dc;
+  --focus: #6c7ea0;
+  --focus-foreground: #dee3ee;
+  --border: #e4dacb;
+  --input: #e4dacb;
+  --ring: #6c7ea0;
+
+  --shadow-color: 42 33 24;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: #211a13;
+  --background-soft: #2a2219;
+  --foreground: #f1e7d6;
+  --foreground-soft: #c9bba5;
+  --card: #2b2319;
+  --card-foreground: #f1e7d6;
+  --popover: #2b2319;
+  --popover-foreground: #f1e7d6;
+  --primary: #e28a4b;
+  --primary-foreground: #241207;
+  --secondary: #4a2e17;
+  --secondary-foreground: #f1e7d6;
+  --muted: #2a2219;
+  --muted-foreground: #8f8271;
+  --accent: #4a2e17;
+  --accent-foreground: #e28a4b;
+  --destructive: #d98276;
+  --destructive-foreground: #3a241f;
+  --success: #8fbb8e;
+  --success-foreground: #233523;
+  --focus: #9daecb;
+  --focus-foreground: #232c3b;
+  --border: #40342559;
+  --input: #40342559;
+  --ring: #9daecb;
+
+  --shadow-color: 0 0 0;
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
   --color-background: var(--background);
+  --color-background-soft: var(--background-soft);
   --color-foreground: var(--foreground);
+  --color-foreground-soft: var(--foreground-soft);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -70,11 +90,16 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-focus: var(--focus);
+  --color-focus-foreground: var(--focus-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
   --font-sans: var(--font-geist-sans);
+  --font-serif: "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -84,5 +109,23 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .shadow-card {
+    box-shadow:
+      0 1px 2px rgb(var(--shadow-color) / 0.06),
+      0 8px 20px -12px rgb(var(--shadow-color) / 0.18);
+  }
+  .dark .shadow-card {
+    box-shadow:
+      0 1px 2px rgb(var(--shadow-color) / 0.3),
+      0 12px 24px -14px rgb(var(--shadow-color) / 0.6);
   }
 }
