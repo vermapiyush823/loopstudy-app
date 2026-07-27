@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppShell } from "@/components/app-shell";
 import { auth } from "@/auth";
 import { getDueSummary } from "@/lib/review/queries";
+import { SignInButton, SignOutButton } from "@/components/auth-buttons";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default async function RootLayout({
             userName={session?.user?.name}
             signedIn={!!session?.user}
             dueCount={due?.totalCount ?? 0}
+            authControl={session?.user ? <SignOutButton /> : <SignInButton />}
           >
             {children}
           </AppShell>
