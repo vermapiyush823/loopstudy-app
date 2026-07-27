@@ -56,6 +56,11 @@ export async function POST(req: Request) {
           question: card.question,
           answer: card.answer,
           source: "ai" as const,
+          easeFactor: 2.5,
+          interval: 0,
+          repetitions: 0,
+          nextReviewDate: now,
+          lastReviewedAt: null,
           createdAt: now,
           updatedAt: now,
         }))

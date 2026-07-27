@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Layers } from "lucide-react";
 import { auth } from "@/auth";
 import { SignInButton } from "@/components/auth-buttons";
 import { getUserTopics } from "@/lib/topics/queries";
 import { getProgressByTopic, getStudySuggestion } from "@/lib/learning/queries";
+import { getDueSummary } from "@/lib/review/queries";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,10 +15,11 @@ import {
 } from "@/components/ui/card";
 
 async function Dashboard({ userId }: { userId: string }) {
-  const [suggestion, topics, progress] = await Promise.all([
+  const [suggestion, topics, progress, due] = await Promise.all([
     getStudySuggestion(userId),
     getUserTopics(userId),
     getProgressByTopic(userId),
+    getDueSummary(userId),
   ]);
 
   const started = topics.filter((t) => progress.has(t._id!.toString()));
@@ -60,6 +62,28 @@ async function Dashboard({ userId }: { userId: string }) {
             <Button asChild>
               <Link href="/topics">
                 Browse topics
+                <ArrowRight />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {due.totalCount > 0 && (
+        <Card className="mb-10">
+          <CardHeader>
+            <CardDescription className="flex items-center gap-1.5">
+              <Layers className="size-3.5" />
+              Spaced repetition
+            </CardDescription>
+            <CardTitle className="text-xl">
+              {due.totalCount} card{due.totalCount === 1 ? "" : "s"} due for review
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6">
+            <Button asChild>
+              <Link href="/review">
+                Start review
                 <ArrowRight />
               </Link>
             </Button>

@@ -56,6 +56,10 @@ export interface LessonNote {
   updatedAt: Date;
 }
 
+/**
+ * SM-2 scheduling fields live directly on the card: easeFactor/interval/repetitions
+ * track the algorithm's state, nextReviewDate is what the due-queue queries filter on.
+ */
 export interface Flashcard {
   _id?: ObjectId;
   userId: ObjectId;
@@ -65,8 +69,22 @@ export interface Flashcard {
   question: string;
   answer: string;
   source: "ai" | "manual";
+  easeFactor: number;
+  interval: number;
+  repetitions: number;
+  nextReviewDate: Date;
+  lastReviewedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+/** Auth.js's MongoDB adapter owns this collection (default name "users") — read-only here. */
+export interface AppUser {
+  _id: ObjectId;
+  name?: string;
+  email?: string;
+  emailVerified?: Date | null;
+  image?: string;
 }
 
 /** Independent of the study side — the user writes these when they want to. */
@@ -117,4 +135,9 @@ export async function getFlashcardsCollection(): Promise<Collection<Flashcard>> 
 export async function getBlogPostsCollection(): Promise<Collection<BlogPost>> {
   const db = await getDb();
   return db.collection<BlogPost>("blogPosts");
+}
+
+export async function getUsersCollection(): Promise<Collection<AppUser>> {
+  const db = await getDb();
+  return db.collection<AppUser>("users");
 }
