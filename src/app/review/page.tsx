@@ -30,9 +30,7 @@ export default async function ReviewPage() {
           question: c.question,
           answer: c.answer,
           topicName: c.topicName,
-          cardType: c.cardType,
           options: c.options,
-          blankToken: c.blankToken,
         }))}
         backHref="/"
         backLabel="Back to dashboard"

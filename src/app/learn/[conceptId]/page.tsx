@@ -86,9 +86,7 @@ export default async function LessonPage({
                     id: c._id!.toString(),
                     question: c.question,
                     answer: c.answer,
-                    cardType: c.cardType,
                     options: c.options,
-                    blankToken: c.blankToken,
                   }))}
                 />
               ) : (

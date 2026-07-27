@@ -72,12 +72,8 @@ export interface Flashcard {
   question: string;
   answer: string;
   source: "ai" | "manual";
-  /** Absent/undefined is treated as "flip" for backward compatibility with existing cards. */
-  cardType?: "flip" | "mcq" | "fill_blank";
-  /** MCQ distractors + correct answer (correct answer is the `answer` field above). */
-  options?: string[];
-  /** The exact substring within `question` to blank out for fill-in-the-blank cards. */
-  blankToken?: string;
+  /** Multiple-choice distractors (correct answer is the `answer` field above). */
+  options: string[];
   easeFactor: number;
   interval: number;
   repetitions: number;

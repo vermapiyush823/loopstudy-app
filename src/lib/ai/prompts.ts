@@ -105,11 +105,9 @@ const FLASHCARDS_SCHEMA = {
           properties: {
             question: { type: "string" },
             answer: { type: "string" },
-            cardType: { type: "string", enum: ["flip", "mcq", "fill_blank"] },
             options: { type: "array", items: { type: "string" } },
-            blankToken: { type: "string" },
           },
-          required: ["question", "answer", "cardType"],
+          required: ["question", "answer", "options"],
         },
       },
     },
@@ -120,9 +118,7 @@ const FLASHCARDS_SCHEMA = {
 export interface GeneratedFlashcard {
   question: string;
   answer: string;
-  cardType?: "flip" | "mcq" | "fill_blank";
-  options?: string[];
-  blankToken?: string;
+  options: string[];
 }
 
 export async function generateFlashcardsFromLesson(
@@ -134,13 +130,8 @@ export async function generateFlashcardsFromLesson(
       {
         role: "system",
         content: [
-          `You turn a lesson into flashcards. Generate up to ${count} cards covering the concepts that matter. Questions must be specific and testable; answers concise.`,
-          "",
-          "Produce a mix of card types via the `cardType` field:",
-          '- "flip" (roughly half): plain question/answer.',
-          '- "mcq" (~30%): set `options` to exactly 3 plausible-but-wrong distractors (do not include the correct answer in `options` — it is taken from `answer`).',
-          '- "fill_blank" (~20%): `question` is a sentence containing the key term to test, and `blankToken` is the exact substring of `question` to blank out (it must match a substring of `question` verbatim); `answer` is the same as `blankToken`.',
-          "",
+          `You turn a lesson into multiple-choice flashcards. Generate up to ${count} cards covering the concepts that matter.`,
+          "Each card is a question with exactly 3 plausible-but-wrong distractors in `options` (do not include the correct answer in `options` — it is taken from `answer`). Questions must be specific and testable; answers concise.",
           "Return JSON only.",
         ].join("\n"),
       },
@@ -149,17 +140,9 @@ export async function generateFlashcardsFromLesson(
     FLASHCARDS_SCHEMA,
     { temperature: 0.5, maxTokens: 4096 }
   );
-  return (result.cards ?? [])
-    .filter((c) => c.question?.trim() && c.answer?.trim())
-    .map((c) => {
-      if (c.cardType === "mcq" && (!c.options || c.options.length < 2)) {
-        return { ...c, cardType: "flip" as const, options: undefined };
-      }
-      if (c.cardType === "fill_blank" && (!c.blankToken || !c.question.includes(c.blankToken))) {
-        return { ...c, cardType: "flip" as const, blankToken: undefined };
-      }
-      return c;
-    });
+  return (result.cards ?? []).filter(
+    (c) => c.question?.trim() && c.answer?.trim() && c.options?.length >= 2
+  );
 }
 
 /* ---------------------------------------------------------------- *
