@@ -30,5 +30,13 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.json({ usersProcessed: allUsers.length, emailsSent, errors });
+  // Temporary — masked fingerprint of the env vars this deployment actually loaded,
+  // to confirm Vercel dashboard edits actually reached the running function. Remove once
+  // email delivery is confirmed working.
+  const key = process.env.RESEND_API_KEY ?? "";
+  const debug = {
+    resendKeyFingerprint: key ? `${key.slice(0, 6)}...${key.slice(-4)} (${key.length})` : "(unset)",
+  };
+
+  return NextResponse.json({ usersProcessed: allUsers.length, emailsSent, errors, debug });
 }

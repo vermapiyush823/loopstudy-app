@@ -19,7 +19,9 @@ export async function sendDueReviewEmail(to: string, summary: DueSummary): Promi
     .join("");
 
   const { error } = await resend.emails.send({
-    from: process.env.EMAIL_FROM!,
+    // Hardcoded: resend.dev's sandbox sender needs no domain verification, and this isn't
+    // a secret — one less Vercel env var to get out of sync while debugging delivery.
+    from: "Loopstudy <onboarding@resend.dev>",
     to,
     subject: `${summary.totalCount} card${summary.totalCount === 1 ? "" : "s"} due for review`,
     html: `
