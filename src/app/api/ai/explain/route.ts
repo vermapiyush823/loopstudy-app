@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const explanation = await explainLesson(lesson.explanation, depth);
+    const explanation = await explainLesson(lesson.content, depth);
     return NextResponse.json({ explanation });
   } catch (err) {
     if (err instanceof NimError) {

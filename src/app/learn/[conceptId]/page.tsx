@@ -9,18 +9,14 @@ import {
   getLessonNote,
 } from "@/lib/learning/queries";
 import { getTopicsCollection } from "@/lib/db/collections";
-import {
-  generateLessonForConcept,
-  markConceptComplete,
-  saveTakeaway,
-} from "@/lib/learning/actions";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { markConceptComplete, saveTakeaway } from "@/lib/learning/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MarkdownContent } from "@/components/markdown-content";
 import { SubmitButton } from "@/components/submit-button";
 import { LessonFlashcards } from "@/components/lesson-flashcards";
 import { LessonDeepDive } from "@/components/lesson-deep-dive";
+import { LessonGenerator } from "@/components/lesson-generator";
 
 export default async function LessonPage({
   params,
@@ -44,8 +40,6 @@ export default async function LessonPage({
       ])
     : [null, []];
 
-  const startLesson = generateLessonForConcept.bind(null, conceptId);
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-8">
@@ -62,58 +56,10 @@ export default async function LessonPage({
       </div>
 
       {!lesson ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ready when you are</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 pb-6">
-            <p className="text-sm text-muted-foreground">
-              The AI will write this lesson for you — the explanation, real-world
-              examples, and a set of flashcards to practice with. Takes a few seconds.
-            </p>
-            <form action={startLesson}>
-              <SubmitButton pendingLabel="Writing your lesson…">
-                Teach me this
-              </SubmitButton>
-            </form>
-          </CardContent>
-        </Card>
+        <LessonGenerator conceptId={conceptId} />
       ) : (
         <div className="space-y-8">
-          <MarkdownContent content={lesson.explanation} />
-
-          {lesson.examples.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-lg font-semibold tracking-tight">
-                In the real world
-              </h2>
-              <div className="space-y-3">
-                {lesson.examples.map((example, i) => (
-                  <Card key={i}>
-                    <CardContent className="py-4 text-sm leading-relaxed">
-                      <MarkdownContent content={example} />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {lesson.keyTakeaways.length > 0 && (
-            <section>
-              <h2 className="mb-3 text-lg font-semibold tracking-tight">
-                Worth remembering
-              </h2>
-              <ul className="space-y-2">
-                {lesson.keyTakeaways.map((point, i) => (
-                  <li key={i} className="flex gap-2 text-sm">
-                    <span className="text-muted-foreground">•</span>
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <MarkdownContent content={lesson.content} />
 
           <LessonDeepDive lessonId={lesson._id!.toString()} />
 

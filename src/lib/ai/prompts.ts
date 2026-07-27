@@ -1,5 +1,5 @@
 import "server-only";
-import { chatCompletion, chatCompletionJSON } from "@/lib/ai/nim";
+import { chatCompletion, chatCompletionJSON, streamChatCompletion } from "@/lib/ai/nim";
 
 /* ---------------------------------------------------------------- *
  * Learning path — the ordered syllabus of concepts for a topic
@@ -57,53 +57,35 @@ export async function generateLearningPath(
 }
 
 /* ---------------------------------------------------------------- *
- * Lesson — the actual teaching content for one concept
+ * Lesson — the actual teaching content for one concept, streamed as
+ * plain Markdown so the client can render it as it's generated rather
+ * than waiting for the whole (slow) generation to finish.
  * ---------------------------------------------------------------- */
 
-const LESSON_SCHEMA = {
-  name: "lesson",
-  schema: {
-    type: "object",
-    properties: {
-      explanation: { type: "string" },
-      examples: { type: "array", items: { type: "string" } },
-      keyTakeaways: { type: "array", items: { type: "string" } },
-    },
-    required: ["explanation", "examples", "keyTakeaways"],
-  },
-};
+const LESSON_SYSTEM_PROMPT = [
+  "You are a great technical teacher. Teach one concept clearly and concretely, as a single flowing Markdown document with exactly these sections, in this order:",
+  "",
+  "1. A focused explanation (roughly 400-700 words). Build intuition first, then precision. Use code blocks where code makes it clearer. Do not pad with filler.",
+  '2. A "## In the real world" section with 2-4 REAL-WORLD examples as short paragraphs. Ground them in situations a working engineer actually meets — a system they\'d build, a bug they\'d hit, an everyday analogy that genuinely maps to the mechanics. Avoid toy foo/bar examples.',
+  '3. A "## Worth remembering" section with a bullet list of 3-5 one-line takeaways.',
+  "",
+  "Write only the lesson content — no preamble, no meta-commentary about the task.",
+].join("\n");
 
-export interface GeneratedLesson {
-  explanation: string;
-  examples: string[];
-  keyTakeaways: string[];
-}
-
-export async function generateLesson(
+export function streamLesson(
   topicName: string,
   conceptTitle: string,
   conceptSummary: string
-): Promise<GeneratedLesson> {
-  return chatCompletionJSON<GeneratedLesson>(
+): AsyncGenerator<string> {
+  return streamChatCompletion(
     [
-      {
-        role: "system",
-        content: [
-          "You are a great technical teacher. Teach one concept clearly and concretely.",
-          "",
-          "Return three things as JSON:",
-          "- explanation: a focused Markdown lesson (roughly 400-700 words). Build intuition first, then precision. Use code blocks where code makes it clearer. Do not pad with filler.",
-          "- examples: 2-4 REAL-WORLD examples, each a short paragraph. Ground them in situations a working engineer actually meets — a system they'd build, a bug they'd hit, an everyday analogy that genuinely maps to the mechanics. Avoid toy foo/bar examples.",
-          "- keyTakeaways: 3-5 one-line points worth remembering.",
-        ].join("\n"),
-      },
+      { role: "system", content: LESSON_SYSTEM_PROMPT },
       {
         role: "user",
         content: `Topic: ${topicName}\nConcept: ${conceptTitle}\nWhat the learner should get from it: ${conceptSummary}`,
       },
     ],
-    LESSON_SCHEMA,
-    { temperature: 0.5, maxTokens: 6144 }
+    { temperature: 0.5, maxTokens: 4096 }
   );
 }
 

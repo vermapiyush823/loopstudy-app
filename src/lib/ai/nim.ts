@@ -135,6 +135,78 @@ export async function chatCompletion(
   throw new NimError(describeFetchError(lastError));
 }
 
+/**
+ * Streams plain-text content deltas only. GPT-OSS is a reasoning model — its
+ * `reasoning_content` deltas (chain-of-thought) arrive interleaved with the
+ * real `content` deltas, and reasoning is not meant to be shown to the user,
+ * so it's filtered out here rather than left to callers.
+ */
+export async function* streamChatCompletion(
+  messages: ChatMessage[],
+  options: ChatOptions = {}
+): AsyncGenerator<string> {
+  const apiKey = process.env.NVIDIA_NIM_API_KEY;
+  if (!apiKey) {
+    throw new NimError("NVIDIA_NIM_API_KEY is not configured");
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        temperature: options.temperature ?? 0.4,
+        max_tokens: options.maxTokens ?? 2048,
+        stream: true,
+      }),
+    });
+  } catch (err) {
+    throw new NimError(describeFetchError(err));
+  }
+
+  if (!res.ok || !res.body) {
+    const text = await res.text().catch(() => "");
+    throw new NimError(`NIM stream request failed (${res.status}): ${text}`, res.status);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+      const payload = trimmed.slice(6);
+      if (payload === "[DONE]") return;
+
+      let chunk: {
+        choices?: Array<{ delta?: { content?: string } }>;
+      };
+      try {
+        chunk = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+      const content = chunk.choices?.[0]?.delta?.content;
+      if (content) yield content;
+    }
+  }
+}
+
 export async function chatCompletionJSON<T = unknown>(
   messages: ChatMessage[],
   jsonSchema: { name: string; schema: Record<string, unknown> },

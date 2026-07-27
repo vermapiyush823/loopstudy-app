@@ -28,16 +28,19 @@ export interface Concept {
   updatedAt: Date;
 }
 
-/** The AI-generated teaching content for a single concept. */
+/**
+ * The AI-generated teaching content for a single concept — one streamed
+ * Markdown document (explanation, real-world examples, and key takeaways
+ * all as sections the model writes itself), not separate structured fields.
+ * Kept as one blob so the lesson can stream to the client as plain text.
+ */
 export interface Lesson {
   _id?: ObjectId;
   userId: ObjectId;
   topicId: ObjectId;
   conceptId: ObjectId;
   title: string;
-  explanation: string;
-  examples: string[];
-  keyTakeaways: string[];
+  content: string;
   createdAt: Date;
 }
 

@@ -5,16 +5,11 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import {
   getConceptsCollection,
-  getFlashcardsCollection,
   getLessonNotesCollection,
   getLessonsCollection,
   getTopicsCollection,
 } from "@/lib/db/collections";
-import {
-  generateFlashcardsFromLesson,
-  generateLearningPath,
-  generateLesson,
-} from "@/lib/ai/prompts";
+import { generateLearningPath } from "@/lib/ai/prompts";
 
 async function requireUserId() {
   const session = await auth();
@@ -63,72 +58,6 @@ export async function generatePathForTopic(topicId: string) {
 
   if (docs.length > 0) await concepts.insertMany(docs);
 
-  revalidatePath(`/topics/${topic.slug}`);
-  revalidatePath("/");
-}
-
-/** Generates the lesson for a concept, plus its flashcards. Idempotent-ish: reuses an existing lesson. */
-export async function generateLessonForConcept(conceptId: string) {
-  const userId = await requireUserId();
-  const uid = new ObjectId(userId);
-
-  const concepts = await getConceptsCollection();
-  const concept = await concepts.findOne({ _id: new ObjectId(conceptId), userId: uid });
-  if (!concept) throw new Error("Forbidden: concept does not belong to user");
-
-  const lessons = await getLessonsCollection();
-  const existing = await lessons.findOne({ userId: uid, conceptId: concept._id! });
-  if (existing) return;
-
-  const topics = await getTopicsCollection();
-  const topic = await topics.findOne({ _id: concept.topicId, userId: uid });
-  if (!topic) throw new Error("Topic not found");
-
-  const generated = await generateLesson(topic.name, concept.title, concept.summary);
-
-  const now = new Date();
-  const lessonResult = await lessons.insertOne({
-    userId: uid,
-    topicId: concept.topicId,
-    conceptId: concept._id!,
-    title: concept.title,
-    explanation: generated.explanation,
-    examples: generated.examples ?? [],
-    keyTakeaways: generated.keyTakeaways ?? [],
-    createdAt: now,
-  });
-
-  await concepts.updateOne(
-    { _id: concept._id },
-    { $set: { status: "in_progress", updatedAt: now } }
-  );
-
-  // Flashcards come from the lesson the learner actually saw.
-  const lessonText = [
-    generated.explanation,
-    ...(generated.examples ?? []),
-    ...(generated.keyTakeaways ?? []),
-  ].join("\n\n");
-
-  const cards = await generateFlashcardsFromLesson(lessonText);
-  if (cards.length > 0) {
-    const flashcards = await getFlashcardsCollection();
-    await flashcards.insertMany(
-      cards.map((card) => ({
-        userId: uid,
-        topicId: concept.topicId,
-        conceptId: concept._id!,
-        lessonId: lessonResult.insertedId,
-        question: card.question,
-        answer: card.answer,
-        source: "ai" as const,
-        createdAt: now,
-        updatedAt: now,
-      }))
-    );
-  }
-
-  revalidatePath(`/learn/${conceptId}`);
   revalidatePath(`/topics/${topic.slug}`);
   revalidatePath("/");
 }
