@@ -1,13 +1,13 @@
 import "server-only";
 
-const BASE_URL = process.env.NVIDIA_NIM_BASE_URL ?? "https://integrate.api.nvidia.com/v1";
-const MODEL = process.env.NVIDIA_NIM_MODEL ?? "openai/gpt-oss-120b";
+const BASE_URL = process.env.GROQ_BASE_URL ?? "https://api.groq.com/openai/v1";
+const MODEL = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 const MAX_RETRIES = 2;
 
-export class NimError extends Error {
+export class LlmError extends Error {
   constructor(message: string, public readonly status?: number) {
     super(message);
-    this.name = "NimError";
+    this.name = "LlmError";
   }
 }
 
@@ -48,7 +48,7 @@ function isTlsTrustError(err: unknown): boolean {
  * the actual error is UNABLE_TO_GET_ISSUER_CERT_LOCALLY, which is actionable.
  */
 function describeFetchError(err: unknown): string {
-  if (!(err instanceof Error)) return "NIM request failed";
+  if (!(err instanceof Error)) return "LLM request failed";
 
   const cause = causeOf(err);
   if (!cause) return err.message;
@@ -64,9 +64,9 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: ChatOptions = {}
 ): Promise<string> {
-  const apiKey = process.env.NVIDIA_NIM_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new NimError("NVIDIA_NIM_API_KEY is not configured");
+    throw new LlmError("GROQ_API_KEY is not configured");
   }
 
   const body: Record<string, unknown> = {
@@ -74,6 +74,9 @@ export async function chatCompletion(
     messages,
     temperature: options.temperature ?? 0.4,
     max_tokens: options.maxTokens ?? 2048,
+    // GPT-OSS always reasons internally; this just keeps that chain-of-thought
+    // out of the wire response since we never want to show or parse it.
+    reasoning_format: "hidden",
   };
 
   if (options.jsonSchema) {
@@ -105,7 +108,7 @@ export async function chatCompletion(
           await sleep(500 * 2 ** attempt);
           continue;
         }
-        throw new NimError(`NIM request failed (${res.status}): ${text}`, res.status);
+        throw new LlmError(`LLM request failed (${res.status}): ${text}`, res.status);
       }
 
       const data = await res.json();
@@ -113,18 +116,18 @@ export async function chatCompletion(
       const content = choice?.message?.content;
       if (typeof content !== "string") {
         if (choice?.finish_reason === "length") {
-          throw new NimError(
-            "NIM ran out of tokens before producing a response (model spent its budget reasoning) — try increasing maxTokens"
+          throw new LlmError(
+            "LLM ran out of tokens before producing a response — try increasing maxTokens"
           );
         }
-        throw new NimError("NIM response missing message content");
+        throw new LlmError("LLM response missing message content");
       }
       return content;
     } catch (err) {
       lastError = err;
-      if (err instanceof NimError) throw err;
+      if (err instanceof LlmError) throw err;
       // A TLS trust failure is deterministic — retrying just burns time.
-      if (isTlsTrustError(err)) throw new NimError(describeFetchError(err));
+      if (isTlsTrustError(err)) throw new LlmError(describeFetchError(err));
       if (attempt < MAX_RETRIES) {
         await sleep(500 * 2 ** attempt);
         continue;
@@ -132,22 +135,21 @@ export async function chatCompletion(
     }
   }
 
-  throw new NimError(describeFetchError(lastError));
+  throw new LlmError(describeFetchError(lastError));
 }
 
 /**
- * Streams plain-text content deltas only. GPT-OSS is a reasoning model — its
- * `reasoning_content` deltas (chain-of-thought) arrive interleaved with the
- * real `content` deltas, and reasoning is not meant to be shown to the user,
- * so it's filtered out here rather than left to callers.
+ * Streams plain-text content deltas only. `reasoning_format: "hidden"` keeps
+ * GPT-OSS's chain-of-thought out of the response entirely, so every delta
+ * that arrives here is real, user-facing content.
  */
 export async function* streamChatCompletion(
   messages: ChatMessage[],
   options: ChatOptions = {}
 ): AsyncGenerator<string> {
-  const apiKey = process.env.NVIDIA_NIM_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new NimError("NVIDIA_NIM_API_KEY is not configured");
+    throw new LlmError("GROQ_API_KEY is not configured");
   }
 
   let res: Response;
@@ -163,16 +165,17 @@ export async function* streamChatCompletion(
         messages,
         temperature: options.temperature ?? 0.4,
         max_tokens: options.maxTokens ?? 2048,
+        reasoning_format: "hidden",
         stream: true,
       }),
     });
   } catch (err) {
-    throw new NimError(describeFetchError(err));
+    throw new LlmError(describeFetchError(err));
   }
 
   if (!res.ok || !res.body) {
     const text = await res.text().catch(() => "");
-    throw new NimError(`NIM stream request failed (${res.status}): ${text}`, res.status);
+    throw new LlmError(`LLM stream request failed (${res.status}): ${text}`, res.status);
   }
 
   const reader = res.body.getReader();
@@ -216,6 +219,6 @@ export async function chatCompletionJSON<T = unknown>(
   try {
     return JSON.parse(content) as T;
   } catch {
-    throw new NimError("NIM returned invalid JSON for structured output");
+    throw new LlmError("LLM returned invalid JSON for structured output");
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { generateBlogDraft } from "@/lib/ai/prompts";
-import { NimError } from "@/lib/ai/nim";
+import { LlmError } from "@/lib/ai/llm";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const draft = await generateBlogDraft(source);
     return NextResponse.json(draft);
   } catch (err) {
-    if (err instanceof NimError) {
+    if (err instanceof LlmError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
     return NextResponse.json({ error: "AI request failed" }, { status: 500 });

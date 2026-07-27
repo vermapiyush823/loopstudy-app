@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { auth } from "@/auth";
 import { getLessonsCollection } from "@/lib/db/collections";
 import { explainLesson } from "@/lib/ai/prompts";
-import { NimError } from "@/lib/ai/nim";
+import { LlmError } from "@/lib/ai/llm";
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const explanation = await explainLesson(lesson.content, depth);
     return NextResponse.json({ explanation });
   } catch (err) {
-    if (err instanceof NimError) {
+    if (err instanceof LlmError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
     return NextResponse.json({ error: "AI request failed" }, { status: 500 });

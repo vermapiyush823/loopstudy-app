@@ -7,7 +7,7 @@ import {
   getTopicsCollection,
 } from "@/lib/db/collections";
 import { streamLesson } from "@/lib/ai/prompts";
-import { NimError } from "@/lib/ai/nim";
+import { LlmError } from "@/lib/ai/llm";
 
 export const maxDuration = 60;
 
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         }
 
         if (full.trim().length < 50) {
-          throw new NimError("The AI returned an empty lesson — try again");
+          throw new LlmError("The AI returned an empty lesson — try again");
         }
 
         const now = new Date();
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         revalidatePath(`/topics/${topic.slug}`);
         revalidatePath("/");
       } catch (err) {
-        const message = err instanceof NimError ? err.message : "Lesson generation failed";
+        const message = err instanceof LlmError ? err.message : "Lesson generation failed";
         controller.enqueue(frame({ error: message }));
       } finally {
         controller.close();

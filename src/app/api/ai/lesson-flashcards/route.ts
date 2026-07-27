@@ -9,7 +9,7 @@ import {
   getTopicsCollection,
 } from "@/lib/db/collections";
 import { generateFlashcardsFromLesson } from "@/lib/ai/prompts";
-import { NimError } from "@/lib/ai/nim";
+import { LlmError } from "@/lib/ai/llm";
 
 export const maxDuration = 60;
 
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ count: cards.length });
   } catch (err) {
-    if (err instanceof NimError) {
+    if (err instanceof LlmError) {
       return NextResponse.json({ error: err.message }, { status: 502 });
     }
     return NextResponse.json({ error: "Flashcard generation failed" }, { status: 500 });

@@ -1,5 +1,5 @@
 import "server-only";
-import { chatCompletion, chatCompletionJSON, streamChatCompletion } from "@/lib/ai/nim";
+import { chatCompletion, chatCompletionJSON, streamChatCompletion } from "@/lib/ai/llm";
 
 /* ---------------------------------------------------------------- *
  * Learning path — the ordered syllabus of concepts for a topic
