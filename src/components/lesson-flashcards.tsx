@@ -7,7 +7,8 @@ interface PracticeCard {
   id: string;
   question: string;
   answer: string;
-  options: string[];
+  /** Optional: legacy cards created before options were required won't have this. */
+  options?: string[];
 }
 
 function shuffled<T>(items: T[]): T[] {
@@ -22,7 +23,8 @@ function shuffled<T>(items: T[]): T[] {
 export function LessonFlashcards({ cards }: { cards: PracticeCard[] }) {
   const [selected, setSelected] = useState<Record<string, string>>({});
   const choicesByCard = useMemo(
-    () => Object.fromEntries(cards.map((c) => [c.id, shuffled([...c.options, c.answer])])),
+    () =>
+      Object.fromEntries(cards.map((c) => [c.id, shuffled([...(c.options ?? []), c.answer])])),
     [cards]
   );
 

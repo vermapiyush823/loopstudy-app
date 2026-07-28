@@ -12,7 +12,8 @@ export interface ReviewCard {
   question: string;
   answer: string;
   topicName?: string;
-  options: string[];
+  /** Optional: legacy cards created before options were required won't have this. */
+  options?: string[];
 }
 
 function shuffled<T>(items: T[]): T[] {
@@ -46,7 +47,10 @@ export function ReviewSession({
 
   const currentCard = index < cards.length ? cards[index] : undefined;
   const choices = useMemo(
-    () => (currentCard ? shuffled([...currentCard.options, currentCard.answer]) : []),
+    () =>
+      currentCard
+        ? shuffled([...(currentCard.options ?? []), currentCard.answer])
+        : [],
     [currentCard]
   );
 
