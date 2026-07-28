@@ -38,6 +38,19 @@ export async function getDueFlashcardsForTopic(
     .toArray();
 }
 
+export async function getFlashcardsForConceptReview(
+  userId: string,
+  conceptId: ObjectId,
+  options: { dueOnly?: boolean } = {}
+): Promise<Flashcard[]> {
+  const flashcards = await getFlashcardsCollection();
+  const match: Record<string, unknown> = { userId: new ObjectId(userId), conceptId };
+  if (options.dueOnly) {
+    match.nextReviewDate = { $lte: new Date() };
+  }
+  return flashcards.find(match).sort({ nextReviewDate: 1 }).toArray();
+}
+
 export interface DueSummary {
   totalCount: number;
   topics: { name: string; slug: string; count: number }[];

@@ -46,6 +46,7 @@ export default async function TopicReviewPage({
           id: c._id!.toString(),
           question: c.question,
           answer: c.answer,
+          conceptId: c.conceptId?.toString(),
           options: c.options,
         }))}
         backHref={`/topics/${topic.slug}`}

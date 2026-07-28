@@ -83,6 +83,22 @@ export interface Flashcard {
   updatedAt: Date;
 }
 
+/** One rating event, recorded alongside the in-place SM-2 update on the Flashcard doc. */
+export interface ReviewLog {
+  _id?: ObjectId;
+  userId: ObjectId;
+  flashcardId: ObjectId;
+  conceptId?: ObjectId;
+  topicId: ObjectId;
+  rating: 1 | 2 | 3 | 4;
+  wasCorrect: boolean;
+  easeFactorBefore: number;
+  easeFactorAfter: number;
+  intervalBefore: number;
+  intervalAfter: number;
+  reviewedAt: Date;
+}
+
 /** A persisted, lesson-grounded follow-up question the learner asked. */
 export interface LessonQuestion {
   _id?: ObjectId;
@@ -152,6 +168,11 @@ export async function getLessonQuestionsCollection(): Promise<Collection<LessonQ
 export async function getFlashcardsCollection(): Promise<Collection<Flashcard>> {
   const db = await getDb();
   return db.collection<Flashcard>("flashcards");
+}
+
+export async function getReviewLogsCollection(): Promise<Collection<ReviewLog>> {
+  const db = await getDb();
+  return db.collection<ReviewLog>("reviewLogs");
 }
 
 export async function getBlogPostsCollection(): Promise<Collection<BlogPost>> {

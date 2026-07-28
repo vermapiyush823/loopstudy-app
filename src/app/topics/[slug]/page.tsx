@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, ListChecks } from "lucide-react";
 import { requireSession } from "@/lib/auth/require-session";
 import { getTopicBySlug } from "@/lib/topics/queries";
 import { getConceptsForTopic } from "@/lib/learning/queries";
@@ -45,19 +45,30 @@ function MasteryBar({ score }: { score: number }) {
 
 function ConceptRow({ concept }: { concept: Concept }) {
   return (
-    <Link
-      href={`/learn/${concept._id!.toString()}`}
-      className="flex items-start gap-3 py-3.5"
-    >
-      <StatusDot status={concept.status} />
-      <div>
-        <div className="text-[14.5px] font-semibold">{concept.title}</div>
-        <div className="mt-0.5 text-[13px] leading-snug text-foreground-soft">
-          {concept.summary}
+    <div className="flex items-start gap-3 py-3.5">
+      <Link
+        href={`/learn/${concept._id!.toString()}`}
+        className="flex min-w-0 flex-1 items-start gap-3"
+      >
+        <StatusDot status={concept.status} />
+        <div>
+          <div className="text-[14.5px] font-semibold">{concept.title}</div>
+          <div className="mt-0.5 text-[13px] leading-snug text-foreground-soft">
+            {concept.summary}
+          </div>
+          {concept.masteryScore !== undefined && <MasteryBar score={concept.masteryScore} />}
         </div>
-        {concept.masteryScore !== undefined && <MasteryBar score={concept.masteryScore} />}
-      </div>
-    </Link>
+      </Link>
+      {concept.masteryScore !== undefined && (
+        <Link
+          href={`/review/concept/${concept._id!.toString()}`}
+          className="mt-0.5 flex shrink-0 items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[11.5px] font-semibold text-primary"
+        >
+          <ListChecks className="size-3" />
+          Review
+        </Link>
+      )}
+    </div>
   );
 }
 

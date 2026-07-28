@@ -30,6 +30,7 @@ export default async function ReviewPage() {
           question: c.question,
           answer: c.answer,
           topicName: c.topicName,
+          conceptId: c.conceptId?.toString(),
           options: c.options,
         }))}
         backHref="/"

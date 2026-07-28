@@ -12,8 +12,14 @@ export interface ReviewCard {
   question: string;
   answer: string;
   topicName?: string;
+  conceptId?: string;
   /** Optional: legacy cards created before options were required won't have this. */
   options?: string[];
+}
+
+interface SessionResult {
+  rating: 1 | 2 | 3 | 4;
+  wasCorrect: boolean;
 }
 
 function shuffled<T>(items: T[]): T[] {
@@ -36,13 +42,18 @@ export function ReviewSession({
   cards,
   backHref,
   backLabel,
+  conceptMasteryScore,
 }: {
   cards: ReviewCard[];
   backHref: string;
   backLabel: string;
+  /** Pass when this session drills a single concept, so the completion screen can call out its updated score. */
+  conceptMasteryScore?: number;
 }) {
   const [index, setIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [results, setResults] = useState<SessionResult[]>([]);
+  const [latestMasteryScore, setLatestMasteryScore] = useState(conceptMasteryScore);
   const [isPending, startTransition] = useTransition();
 
   const currentCard = index < cards.length ? cards[index] : undefined;
@@ -53,15 +64,40 @@ export function ReviewSession({
         : [],
     [currentCard]
   );
+  const wasCorrect = selectedOption !== null && currentCard ? selectedOption === currentCard.answer : null;
 
   if (!currentCard) {
+    const correctCount = results.filter((r) => r.wasCorrect).length;
+    const isSingleConcept = cards.length > 0 && cards.every((c) => c.conceptId === cards[0].conceptId);
+
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 text-center">
         <CheckCircle2 className="size-11 text-success" />
         <p className="font-serif text-lg font-semibold">Review complete</p>
         <p className="text-sm text-foreground-soft">
-          You cleared {cards.length} card{cards.length === 1 ? "" : "s"} for now.
+          {correctCount} of {results.length} correct this session.
         </p>
+
+        <div className="mt-1 grid grid-cols-4 gap-2 text-center">
+          {RATINGS.map((r) => {
+            const count = results.filter((res) => res.rating === r.value).length;
+            return (
+              <div key={r.value} className="rounded-lg border border-border bg-card px-2 py-2">
+                <div className="text-base font-semibold tabular-nums">{count}</div>
+                <div className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                  {r.label}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {isSingleConcept && latestMasteryScore !== undefined && (
+          <p className="text-sm font-semibold text-primary">
+            Concept mastery now {latestMasteryScore}%
+          </p>
+        )}
+
         <Button asChild className="mt-2">
           <Link href={backHref}>{backLabel}</Link>
         </Button>
@@ -77,12 +113,19 @@ export function ReviewSession({
   }
 
   function rate(value: 1 | 2 | 3 | 4) {
+    if (wasCorrect === null) return;
     startTransition(async () => {
-      await rateFlashcard(card.id, value);
+      const result = await rateFlashcard(card.id, value, wasCorrect);
+      if (result.masteryScore !== undefined) setLatestMasteryScore(result.masteryScore);
+      setResults((prev) => [...prev, { rating: value, wasCorrect }]);
       setSelectedOption(null);
       setIndex((i) => i + 1);
     });
   }
+
+  const availableRatings = RATINGS.filter((r) =>
+    wasCorrect === null ? true : wasCorrect ? r.value !== 1 : r.value === 1
+  );
 
   return (
     <>
@@ -130,21 +173,28 @@ export function ReviewSession({
 
       <BottomCtaBar className="flex-col items-stretch">
         {selectedOption !== null && (
-          <div className="grid grid-cols-2 gap-2.5">
-            {RATINGS.map((r) => (
-              <button
-                key={r.value}
-                disabled={isPending}
-                onClick={() => rate(r.value)}
-                className={`min-h-13 rounded-xl px-2 py-3 text-sm font-semibold disabled:opacity-50 ${r.className}`}
-              >
-                {r.label}
-                <small className="mt-0.5 block text-[11px] font-normal opacity-75">
-                  {r.eta}
-                </small>
-              </button>
-            ))}
-          </div>
+          <>
+            <p className="mb-1.5 text-center text-[11.5px] text-muted-foreground">
+              {wasCorrect
+                ? "Correct — rate how easy that recall was"
+                : "Not quite — this card comes back again shortly"}
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {availableRatings.map((r) => (
+                <button
+                  key={r.value}
+                  disabled={isPending}
+                  onClick={() => rate(r.value)}
+                  className={`min-h-13 rounded-xl px-2 py-3 text-sm font-semibold disabled:opacity-50 ${r.className}`}
+                >
+                  {r.label}
+                  <small className="mt-0.5 block text-[11px] font-normal opacity-75">
+                    {r.eta}
+                  </small>
+                </button>
+              ))}
+            </div>
+          </>
         )}
       </BottomCtaBar>
     </>
