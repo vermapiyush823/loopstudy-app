@@ -33,10 +33,10 @@ export default async function LessonPage({
   const concept = await getConceptById(session.user.id, conceptId);
   if (!concept) notFound();
 
-  const topics = await getTopicsCollection();
-  const topic = await topics.findOne({ _id: concept.topicId });
-
-  const lesson = await getLessonForConcept(session.user.id, concept._id!);
+  const [topic, lesson] = await Promise.all([
+    getTopicsCollection().then((topics) => topics.findOne({ _id: concept.topicId })),
+    getLessonForConcept(session.user.id, concept._id!),
+  ]);
   const [note, flashcards, questions] = lesson
     ? await Promise.all([
         getLessonNote(session.user.id, lesson._id!),

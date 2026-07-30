@@ -7,24 +7,18 @@ if (!process.env.MONGODB_URI) {
 const uri = process.env.MONGODB_URI;
 const options = {};
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
 declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-if (process.env.NODE_ENV === "development") {
-  // Reuse the client across HMR reloads in dev so we don't open a new
-  // connection on every module reload.
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+// Cache the client on the global object so warm serverless invocations
+// (and HMR reloads in dev) reuse the same connection instead of opening
+// a new one per request.
+if (!global._mongoClientPromise) {
+  const client = new MongoClient(uri, options);
+  global._mongoClientPromise = client.connect();
 }
+
+const clientPromise = global._mongoClientPromise;
 
 export default clientPromise;

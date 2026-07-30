@@ -1,8 +1,9 @@
+import { cache } from "react";
 import NextAuth from "next-auth";
 import { authConfig } from "@/lib/auth/config";
 import { seedTopicsForUser } from "@/lib/topics/seed";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const { handlers, auth: uncachedAuth, signIn, signOut } = NextAuth({
   ...authConfig,
   events: {
     async createUser({ user }) {
@@ -12,3 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+const auth = cache(uncachedAuth);
+
+export { handlers, auth, signIn, signOut };
