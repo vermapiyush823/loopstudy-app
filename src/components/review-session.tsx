@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { rateFlashcard } from "@/lib/review/actions";
 import { Button } from "@/components/ui/button";
 import { BottomCtaBar } from "@/components/bottom-cta-bar";
@@ -15,6 +15,8 @@ export interface ReviewCard {
   conceptId?: string;
   /** Optional: legacy cards created before options were required won't have this. */
   options?: string[];
+  /** True once this card has racked up enough consecutive lapses to flag as struggling. */
+  isLeech?: boolean;
 }
 
 interface SessionResult {
@@ -53,7 +55,6 @@ export function ReviewSession({
   const [index, setIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [results, setResults] = useState<SessionResult[]>([]);
-  const [latestMasteryScore, setLatestMasteryScore] = useState(conceptMasteryScore);
   const [isPending, startTransition] = useTransition();
 
   const currentCard = index < cards.length ? cards[index] : undefined;
@@ -92,9 +93,9 @@ export function ReviewSession({
           })}
         </div>
 
-        {isSingleConcept && latestMasteryScore !== undefined && (
+        {isSingleConcept && conceptMasteryScore !== undefined && (
           <p className="text-sm font-semibold text-primary">
-            Concept mastery now {latestMasteryScore}%
+            Concept mastery: {conceptMasteryScore}%
           </p>
         )}
 
@@ -115,8 +116,7 @@ export function ReviewSession({
   function rate(value: 1 | 2 | 3 | 4) {
     if (wasCorrect === null) return;
     startTransition(async () => {
-      const result = await rateFlashcard(card.id, value, wasCorrect);
-      if (result.masteryScore !== undefined) setLatestMasteryScore(result.masteryScore);
+      await rateFlashcard(card.id, value, wasCorrect);
       setResults((prev) => [...prev, { rating: value, wasCorrect }]);
       setSelectedOption(null);
       setIndex((i) => i + 1);
@@ -144,6 +144,12 @@ export function ReviewSession({
         </div>
 
         <div className="mt-4 mb-4 flex flex-1 flex-col justify-center gap-2.5">
+          {card.isLeech && (
+            <div className="mx-auto mb-1 flex items-center gap-1 rounded-full bg-destructive/15 px-2.5 py-1 text-[11px] font-semibold text-destructive">
+              <TriangleAlert className="size-3" />
+              Struggling card
+            </div>
+          )}
           <p className="mb-1 text-center font-serif text-[17px] font-semibold leading-snug">
             {card.question}
           </p>

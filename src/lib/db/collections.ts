@@ -79,6 +79,9 @@ export interface Flashcard {
   repetitions: number;
   nextReviewDate: Date;
   lastReviewedAt: Date | null;
+  /** Consecutive-lapse tracking for leech detection; absent on cards created before this field existed. */
+  lapseCount?: number;
+  isLeech?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

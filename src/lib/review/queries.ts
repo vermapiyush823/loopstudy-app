@@ -1,17 +1,24 @@
 import { ObjectId } from "mongodb";
 import { getFlashcardsCollection, type Flashcard } from "@/lib/db/collections";
 
+/** Caps a single review session's card count so a long-neglected queue doesn't load hundreds of cards at once. */
+const DEFAULT_DUE_LIMIT = 50;
+
 export interface DueFlashcard extends Flashcard {
   topicName: string;
   topicSlug: string;
 }
 
-export async function getDueFlashcards(userId: string): Promise<DueFlashcard[]> {
+export async function getDueFlashcards(
+  userId: string,
+  limit: number = DEFAULT_DUE_LIMIT
+): Promise<DueFlashcard[]> {
   const flashcards = await getFlashcardsCollection();
   return flashcards
     .aggregate<DueFlashcard>([
       { $match: { userId: new ObjectId(userId), nextReviewDate: { $lte: new Date() } } },
       { $sort: { nextReviewDate: 1 } },
+      { $limit: limit },
       {
         $lookup: {
           from: "topics",
@@ -29,12 +36,14 @@ export async function getDueFlashcards(userId: string): Promise<DueFlashcard[]> 
 
 export async function getDueFlashcardsForTopic(
   userId: string,
-  topicId: ObjectId
+  topicId: ObjectId,
+  limit: number = DEFAULT_DUE_LIMIT
 ): Promise<Flashcard[]> {
   const flashcards = await getFlashcardsCollection();
   return flashcards
     .find({ userId: new ObjectId(userId), topicId, nextReviewDate: { $lte: new Date() } })
     .sort({ nextReviewDate: 1 })
+    .limit(limit)
     .toArray();
 }
 

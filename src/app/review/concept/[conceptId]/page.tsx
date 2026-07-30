@@ -52,6 +52,7 @@ export default async function ConceptReviewPage({
           topicName: topic?.name,
           conceptId: c.conceptId?.toString(),
           options: c.options,
+          isLeech: c.isLeech,
         }))}
         backHref={backHref}
         backLabel={`Back to ${concept.title}`}

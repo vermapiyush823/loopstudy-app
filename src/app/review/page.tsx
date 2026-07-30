@@ -32,6 +32,7 @@ export default async function ReviewPage() {
           topicName: c.topicName,
           conceptId: c.conceptId?.toString(),
           options: c.options,
+          isLeech: c.isLeech,
         }))}
         backHref="/"
         backLabel="Back to dashboard"

@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
-import { getUsersCollection } from "@/lib/db/collections";
+import { getUsersCollection, type AppUser } from "@/lib/db/collections";
 import { getDueSummary } from "@/lib/review/queries";
 import { sendDueReviewEmail } from "@/lib/notifications/email";
 
 export const maxDuration = 60;
+
+/** Number of users emailed concurrently per batch, to stay considerate of Resend's rate limit. */
+const BATCH_SIZE = 10;
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -17,8 +28,8 @@ export async function GET(request: Request) {
   let emailsSent = 0;
   const errors: string[] = [];
 
-  for (const user of allUsers) {
-    if (!user.email) continue;
+  async function processUser(user: AppUser) {
+    if (!user.email) return;
     try {
       const summary = await getDueSummary(user._id.toString());
       if (summary.totalCount > 0) {
@@ -28,6 +39,10 @@ export async function GET(request: Request) {
     } catch (err) {
       errors.push(`${user._id.toString()}: ${err instanceof Error ? err.message : "unknown error"}`);
     }
+  }
+
+  for (const batch of chunk(allUsers, BATCH_SIZE)) {
+    await Promise.allSettled(batch.map(processUser));
   }
 
   return NextResponse.json({ usersProcessed: allUsers.length, emailsSent, errors });
