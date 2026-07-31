@@ -145,6 +145,40 @@ export async function generateFlashcardsFromLesson(
   );
 }
 
+/**
+ * Same shape as generateFlashcardsFromLesson, but for the on-demand topic
+ * test/quiz mode: fed a topic's concept titles+summaries instead of one
+ * lesson's full text, so it can produce cards spanning the whole topic.
+ */
+export async function generateFlashcardsForTopic(
+  topicName: string,
+  concepts: { title: string; summary: string }[],
+  count: number
+): Promise<GeneratedFlashcard[]> {
+  const conceptList = concepts
+    .map((c) => `- ${c.title}: ${c.summary}`)
+    .join("\n");
+
+  const result = await chatCompletionJSON<{ cards: GeneratedFlashcard[] }>(
+    [
+      {
+        role: "system",
+        content: [
+          `You write multiple-choice flashcards to test someone on a topic. Generate exactly ${count} cards covering the concept list below, spread across as many of the concepts as make sense.`,
+          "Each card is a question with exactly 3 plausible-but-wrong distractors in `options` (do not include the correct answer in `options` — it is taken from `answer`). Questions must be specific and testable; answers concise.",
+          "Return JSON only.",
+        ].join("\n"),
+      },
+      { role: "user", content: `Topic: ${topicName}\n\nConcepts:\n${conceptList}` },
+    ],
+    FLASHCARDS_SCHEMA,
+    { temperature: 0.5, maxTokens: 4096 }
+  );
+  return (result.cards ?? []).filter(
+    (c) => c.question?.trim() && c.answer?.trim() && c.options?.length >= 2
+  );
+}
+
 /* ---------------------------------------------------------------- *
  * Go deeper on a lesson
  * ---------------------------------------------------------------- */

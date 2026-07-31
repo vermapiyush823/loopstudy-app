@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { rateFlashcard } from "@/lib/review/actions";
@@ -20,9 +20,11 @@ export interface ReviewCard {
 }
 
 interface SessionResult {
-  rating: 1 | 2 | 3 | 4;
   wasCorrect: boolean;
 }
+
+/** How long the correct/incorrect reveal stays on screen before auto-advancing. */
+const ADVANCE_DELAY_MS = 700;
 
 function shuffled<T>(items: T[]): T[] {
   const copy = [...items];
@@ -33,29 +35,28 @@ function shuffled<T>(items: T[]): T[] {
   return copy;
 }
 
-const RATINGS: { value: 1 | 2 | 3 | 4; label: string; eta: string; className: string }[] = [
-  { value: 1, label: "Again", eta: "<1m", className: "border-transparent bg-destructive/15 text-destructive" },
-  { value: 2, label: "Hard", eta: "~2d", className: "border-border bg-card" },
-  { value: 3, label: "Good", eta: "~5d", className: "border-border bg-card" },
-  { value: 4, label: "Easy", eta: "~9d", className: "border-transparent bg-primary text-primary-foreground" },
-];
-
 export function ReviewSession({
   cards,
   backHref,
   backLabel,
   conceptMasteryScore,
+  mode = "spaced-repetition",
 }: {
   cards: ReviewCard[];
   backHref: string;
   backLabel: string;
   /** Pass when this session drills a single concept, so the completion screen can call out its updated score. */
   conceptMasteryScore?: number;
+  /**
+   * "spaced-repetition" (default) writes SM-2 scheduling state via rateFlashcard for every
+   * answer. "quiz" is a practice-only mode (e.g. a topic self-test) that never touches
+   * scheduling — it only tracks correctness for the session summary.
+   */
+  mode?: "spaced-repetition" | "quiz";
 }) {
   const [index, setIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [results, setResults] = useState<SessionResult[]>([]);
-  const [isPending, startTransition] = useTransition();
 
   const currentCard = index < cards.length ? cards[index] : undefined;
   const choices = useMemo(
@@ -67,6 +68,23 @@ export function ReviewSession({
   );
   const wasCorrect = selectedOption !== null && currentCard ? selectedOption === currentCard.answer : null;
 
+  useEffect(() => {
+    if (!currentCard || wasCorrect === null) return;
+
+    if (mode === "spaced-repetition") {
+      rateFlashcard(currentCard.id, wasCorrect ? 3 : 1, wasCorrect);
+    }
+
+    const timer = setTimeout(() => {
+      setResults((prev) => [...prev, { wasCorrect }]);
+      setSelectedOption(null);
+      setIndex((i) => i + 1);
+    }, ADVANCE_DELAY_MS);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wasCorrect]);
+
   if (!currentCard) {
     const correctCount = results.filter((r) => r.wasCorrect).length;
     const isSingleConcept = cards.length > 0 && cards.every((c) => c.conceptId === cards[0].conceptId);
@@ -74,26 +92,14 @@ export function ReviewSession({
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-5 text-center">
         <CheckCircle2 className="size-11 text-success" />
-        <p className="font-serif text-lg font-semibold">Review complete</p>
+        <p className="font-serif text-lg font-semibold">
+          {mode === "quiz" ? "Test complete" : "Review complete"}
+        </p>
         <p className="text-sm text-foreground-soft">
           {correctCount} of {results.length} correct this session.
         </p>
 
-        <div className="mt-1 grid grid-cols-4 gap-2 text-center">
-          {RATINGS.map((r) => {
-            const count = results.filter((res) => res.rating === r.value).length;
-            return (
-              <div key={r.value} className="rounded-lg border border-border bg-card px-2 py-2">
-                <div className="text-base font-semibold tabular-nums">{count}</div>
-                <div className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                  {r.label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {isSingleConcept && conceptMasteryScore !== undefined && (
+        {mode === "spaced-repetition" && isSingleConcept && conceptMasteryScore !== undefined && (
           <p className="text-sm font-semibold text-primary">
             Concept mastery: {conceptMasteryScore}%
           </p>
@@ -112,20 +118,6 @@ export function ReviewSession({
     if (selectedOption) return;
     setSelectedOption(option);
   }
-
-  function rate(value: 1 | 2 | 3 | 4) {
-    if (wasCorrect === null) return;
-    startTransition(async () => {
-      await rateFlashcard(card.id, value, wasCorrect);
-      setResults((prev) => [...prev, { rating: value, wasCorrect }]);
-      setSelectedOption(null);
-      setIndex((i) => i + 1);
-    });
-  }
-
-  const availableRatings = RATINGS.filter((r) =>
-    wasCorrect === null ? true : wasCorrect ? r.value !== 1 : r.value === 1
-  );
 
   return (
     <>
@@ -178,30 +170,13 @@ export function ReviewSession({
       </div>
 
       <BottomCtaBar className="flex-col items-stretch">
-        {selectedOption !== null && (
-          <>
-            <p className="mb-1.5 text-center text-[11.5px] text-muted-foreground">
-              {wasCorrect
-                ? "Correct — rate how easy that recall was"
-                : "Not quite — this card comes back again shortly"}
-            </p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {availableRatings.map((r) => (
-                <button
-                  key={r.value}
-                  disabled={isPending}
-                  onClick={() => rate(r.value)}
-                  className={`min-h-13 rounded-xl px-2 py-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${r.className}`}
-                >
-                  {r.label}
-                  <small className="mt-0.5 block text-[11px] font-normal opacity-75">
-                    {r.eta}
-                  </small>
-                </button>
-              ))}
-            </div>
-          </>
-        )}
+        <p className="text-center text-[11.5px] text-muted-foreground">
+          {selectedOption === null
+            ? "Pick an answer"
+            : wasCorrect
+              ? "Correct!"
+              : "Not quite — moving on"}
+        </p>
       </BottomCtaBar>
     </>
   );

@@ -47,6 +47,15 @@ export async function getDueFlashcardsForTopic(
     .toArray();
 }
 
+/** All flashcards for a topic regardless of due date — used by the on-demand topic test/quiz mode. */
+export async function getAllFlashcardsForTopic(
+  userId: string,
+  topicId: ObjectId
+): Promise<Flashcard[]> {
+  const flashcards = await getFlashcardsCollection();
+  return flashcards.find({ userId: new ObjectId(userId), topicId }).toArray();
+}
+
 export async function getFlashcardsForConceptReview(
   userId: string,
   conceptId: ObjectId,
