@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 import { requireSession } from "@/lib/auth/require-session";
 import { getTopicBySlug } from "@/lib/topics/queries";
 import { getDueFlashcardsForTopic } from "@/lib/review/queries";
@@ -26,6 +27,7 @@ export default async function TopicReviewPage({
         <DrillInHeader title={`Review — ${topic.name}`} backHref={`/topics/${topic.slug}`} />
         <div className="flex flex-1 items-center justify-center px-4.5">
           <Card className="w-full gap-1.5 p-5 text-center">
+            <CheckCircle2 className="mx-auto mb-1 size-8 text-success" />
             <h2 className="font-serif text-lg font-semibold">
               All caught up on {topic.name}
             </h2>

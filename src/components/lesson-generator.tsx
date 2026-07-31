@@ -97,6 +97,9 @@ export function LessonGenerator({ conceptId }: { conceptId: string }) {
         <p className="text-sm text-muted-foreground">Connecting to the AI…</p>
       )}
       {text && <MarkdownContent content={text} className="text-[15px] leading-[1.65]" />}
+      {phase === "streaming" && (
+        <span className="-mt-4 inline-block h-4 w-2 animate-pulse bg-primary/70" aria-hidden />
+      )}
     </div>
   );
 }

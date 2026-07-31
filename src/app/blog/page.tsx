@@ -14,7 +14,10 @@ export default async function BlogPage() {
       </p>
 
       {posts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No posts published yet.</p>
+        <Card className="gap-1.5 p-5 text-center">
+          <PenLine className="mx-auto mb-1 size-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No posts published yet.</p>
+        </Card>
       ) : (
         <Card className="gap-0 divide-y divide-border p-0 px-3.5">
           {posts.map((post) => (
@@ -40,7 +43,7 @@ export default async function BlogPage() {
         <Link
           href="/blog/manage/new"
           aria-label="New post"
-          className="fixed right-4.5 flex size-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_22px_-8px_rgba(190,91,36,0.55)]"
+          className="fixed right-4.5 flex size-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_22px_-8px] shadow-primary/55"
           style={{ bottom: "calc(var(--tabbar-h) + 18px + env(safe-area-inset-bottom))" }}
         >
           <PenLine className="size-5" strokeWidth={1.8} />

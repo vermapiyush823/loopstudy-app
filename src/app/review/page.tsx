@@ -1,3 +1,4 @@
+import { CheckCircle2 } from "lucide-react";
 import { requireSession } from "@/lib/auth/require-session";
 import { getDueFlashcards } from "@/lib/review/queries";
 import { ReviewSession } from "@/components/review-session";
@@ -12,6 +13,7 @@ export default async function ReviewPage() {
     return (
       <div className="flex flex-1 items-center justify-center px-4.5">
         <Card className="w-full gap-1.5 p-5 text-center">
+          <CheckCircle2 className="mx-auto mb-1 size-8 text-success" />
           <h2 className="font-serif text-lg font-semibold">All caught up</h2>
           <p className="text-[13.5px] text-foreground-soft">
             No cards are due for review right now.

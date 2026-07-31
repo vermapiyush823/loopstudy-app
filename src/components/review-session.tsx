@@ -162,7 +162,7 @@ export function ReviewSession({
                 key={option}
                 disabled={showState}
                 onClick={() => selectOption(option)}
-                className={`rounded-xl border p-3.5 text-left text-[14.5px] font-medium disabled:opacity-100 ${
+                className={`rounded-xl border p-3.5 text-left text-[14.5px] font-medium transition-transform active:scale-[0.98] disabled:opacity-100 ${
                   showState && isCorrect
                     ? "border-transparent bg-success/15 text-success"
                     : showState && isSelected
@@ -191,7 +191,7 @@ export function ReviewSession({
                   key={r.value}
                   disabled={isPending}
                   onClick={() => rate(r.value)}
-                  className={`min-h-13 rounded-xl px-2 py-3 text-sm font-semibold disabled:opacity-50 ${r.className}`}
+                  className={`min-h-13 rounded-xl px-2 py-3 text-sm font-semibold transition-transform active:scale-[0.98] disabled:opacity-50 ${r.className}`}
                 >
                   {r.label}
                   <small className="mt-0.5 block text-[11px] font-normal opacity-75">

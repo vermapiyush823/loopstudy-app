@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Check, ListChecks } from "lucide-react";
+import { Check, ListChecks, Sparkles } from "lucide-react";
 import { requireSession } from "@/lib/auth/require-session";
 import { getTopicBySlug } from "@/lib/topics/queries";
 import { getConceptsForTopic } from "@/lib/learning/queries";
@@ -36,7 +36,7 @@ function MasteryBar({ score }: { score: number }) {
       title={`${score}% mastery`}
     >
       <div
-        className="h-full rounded-full bg-primary"
+        className="h-full rounded-full bg-primary transition-all"
         style={{ width: `${score}%` }}
       />
     </div>
@@ -98,6 +98,7 @@ export default async function TopicDetailPage({
 
         {concepts.length === 0 ? (
           <Card className="gap-3 p-5">
+            <Sparkles className="size-7 text-primary" />
             <h2 className="font-serif text-lg font-semibold">No learning path yet</h2>
             <p className="text-[13.5px] leading-relaxed text-foreground-soft">
               Let the AI break {topic.name} into an ordered set of concepts, from

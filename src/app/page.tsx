@@ -108,7 +108,7 @@ async function Dashboard({ userId }: { userId: string }) {
                   </span>
                   <span className="h-1.5 w-15 shrink-0 overflow-hidden rounded-full bg-background">
                     <span
-                      className="block h-full rounded-full bg-primary"
+                      className="block h-full rounded-full bg-primary transition-all"
                       style={{ width: `${pct}%` }}
                     />
                   </span>

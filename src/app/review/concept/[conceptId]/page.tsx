@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Layers } from "lucide-react";
 import { requireSession } from "@/lib/auth/require-session";
 import { getConceptById } from "@/lib/learning/queries";
 import { getFlashcardsForConceptReview } from "@/lib/review/queries";
@@ -31,6 +32,7 @@ export default async function ConceptReviewPage({
         <DrillInHeader title={`Review — ${concept.title}`} backHref={backHref} />
         <div className="flex flex-1 items-center justify-center px-4.5">
           <Card className="w-full gap-1.5 p-5 text-center">
+            <Layers className="mx-auto mb-1 size-8 text-muted-foreground" />
             <h2 className="font-serif text-lg font-semibold">No cards yet</h2>
             <p className="text-[13.5px] text-foreground-soft">
               Generate flashcards for this lesson first.
